@@ -1,5 +1,6 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
+import statistics as stat
 
 class MNISTFeatureExtractor:
 				
@@ -17,27 +18,35 @@ class MNISTFeatureExtractor:
 	def load(self):
 		self.mnist = input_data.read_data_sets(self.directory, one_hot=False)
 	
-	def extract(self, method):
-		# for each image in training set, extract features and push it into self.features
-		# also push the label into self.labels
-		for tr_image, tr_label in zip(self.mnist.train.images, self.mnist.train.labels):
-			self.features.append(list(method(tr_image)))
-			self.labels.append(tr_label)
+	def extract(self, method, test=False):
+		def insert_result(image, label):
+			self.features.append(list(method(image)))
+			self.labels.append(label)
 			print(len(self))
-		# for each image in testing set, extract features and push it into self.features
-		# also push the label into self.labels
-		for te_image, te_label in zip(self.mnist.test.images, self.mnist.test.labels):
-			self.features.append(list(method(te_image)))
-			self.labels.append(te_label)
-			print(len(self))
+			
+		if test:
+			# for test purpose
+			for tr_image, tr_label in zip(*self.mnist.train.next_batch(100)):
+				insert_result(tr_image, tr_label)
+		else:
+			# for each image in training set, extract features and push it into self.features
+			# also push the label into self.labels
+			for tr_image, tr_label in zip(self.mnist.train.images, self.mnist.train.labels):
+				insert_result(tr_image, tr_label)
+			# for each image in testing set, extract features and push it into self.features
+			# also push the label into self.labels
+			for te_image, te_label in zip(self.mnist.test.images, self.mnist.test.labels):
+				insert_result(te_image, te_label)
 		# convert to numpy array
 		self.features = np.array(self.features)
 		self.labels = np.array(self.labels)
+		print(self.features)
+		print(self.labels)
 						
 	# normalize the data to make features range from -1024 to 1024
 	def normalize(self):
 		abs_max_attr = np.amax(np.abs(self.features), axis=0)
-		self.normalize_factor = 1024 / abs_max_attr
+		self.normalize_factor = 256 / abs_max_attr
 		for i in range(len(self.features)):
 			self.features[i] *= self.normalize_factor
 			
@@ -125,11 +134,11 @@ def diagonal_features(image):
 		return pixel_value(img, zone_row, zone_col) >= 0.5
 		
 	def evaluate_zone(img, zone):
-		diagonals = [0] * 13
+		diagonals = [0.0] * 13
 		for row in range(7):
 			for col in range(7):
 				diagonals[row + col] += zone_pixel_on(img, zone, row, col)
-		return np.ndarray(diagonals).mean
+		return stat.mean(diagonals)
 		
 	features = [0] * 16
 	for zone in range(16):
@@ -138,9 +147,9 @@ def diagonal_features(image):
 		
 		
 extractor = MNISTFeatureExtractor()	
-extractor.load()							# load mnist
-extractor.extract(diagonal_features)		# pass your feature extractor as the parameter
-extractor.normalize()						# normalize dataset
-extractor.output('MNIST.data')				# write to file
+extractor.load()										# load mnist
+extractor.extract(diagonal_features, test=False)		# pass your feature extractor as the parameter
+extractor.normalize()									# normalize dataset
+extractor.output('MNIST_diagonal.data')					# write to file
 			
 			
