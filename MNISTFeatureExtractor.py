@@ -1,6 +1,14 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 
+# helper method to get a pixel value by row and column
+def pixel(img, row, col):
+	return img[28 * row + col]
+
+# helper method to check if a pixel	 value is greater than 0.5
+def isOn(img, row, col):
+	return pixel(img, row, col) >= 0.5
+
 class MNISTFeatureExtractor:
 				
 	def __init__(self, directory='MNIST_data/'):
@@ -9,24 +17,13 @@ class MNISTFeatureExtractor:
 		self.features = []
 		self.labels = []
 		self.normalize_factor = None
-		self.one_hot = one_hot
 		
 	def __len__(self):
 		return len(self.labels)
 	
 	# load the original MNIST data and store it in self.mnist
 	def load(self):
-		self.mnist = input_data.read_data_sets(self.directory, one_hot=self.one_hot)
-	
-	# helper method to get a pixel value by row and column
-	@staticmethod
-	def pixel(img, row, col):
-		return img[28 * row + col]
-	
-	# helper method to check if a pixel	 value is greater than 0.5
-	@staticmethod
-	def isOn(img, row, col):
-		return pixel(img, row, col) >= 0.5
+		self.mnist = input_data.read_data_sets(self.directory, one_hot=False)
 	
 	# extract the statistical features
 	def statistical_feature(self):
@@ -95,13 +92,13 @@ class MNISTFeatureExtractor:
 		for tr_image, tr_label in zip(self.mnist.train.images, self.mnist.train.labels):
 			self.features.append(list(extract(tr_image)))
 			self.labels.append(tr_label)
-			print(self.count)
+			print(len(self))
 		# for each image in testing set, extract features and push it into self.features
 		# also push the label into self.labels
 		for te_image, te_label in zip(self.mnist.test.images, self.mnist.test.labels):
 			self.features.append(list(extract(te_image)))
 			self.labels.append(te_label)
-			print(self.count)
+			print(len(self))
 			
 	# TODO
 	def diagonal_extraction(self):
