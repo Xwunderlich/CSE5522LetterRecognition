@@ -5,10 +5,6 @@ import numpy as np
 def pixel(img, row, col):
 	return img[28 * row + col]
 
-# helper method to check if a pixel	 value is greater than 0.5
-def isOn(img, row, col):
-	return pixel(img, row, col) >= 0.5
-
 class MNISTFeatureExtractor:
 				
 	def __init__(self, directory='MNIST_data/'):
@@ -28,6 +24,9 @@ class MNISTFeatureExtractor:
 	# extract the statistical features
 	def statistical_feature(self):
 		
+		def isOn(img, row, col):
+			return pixel(img, row, col) >= 0.5
+
 		def offLeft(img, row, col):
 			return col == 0 or not isOn(img, row, col - 1)
 			
@@ -102,8 +101,33 @@ class MNISTFeatureExtractor:
 			
 	# TODO
 	def diagonal_extraction(self):
-		def zone_pixel(img, zone, row, col):
-			pass
+		def zone_pixel_on(img, zone, row, col):
+			zone_row = zone // 4 * 7 + row
+			zone_col = zone % 4 * 7 + col
+			return pixel(img, zone_row, zone_col) >= 0.5
+			
+		def evaluate_zone(img, zone):
+			diagonals = [0] * 13
+			for row in range(7):
+				for col in range(7):
+					diagonals[row + col] += zone_pixel_on(img, zone, row, col)
+			return np.ndarray(diagonals).mean
+			
+		def extract(image):
+			for zone in range(16):
+				pass
+			
+		for tr_image, tr_label in zip(self.mnist.train.images, self.mnist.train.labels):
+			self.features.append(list(extract(tr_image)))
+			self.labels.append(tr_label)
+			print(len(self))
+		# for each image in testing set, extract features and push it into self.features
+		# also push the label into self.labels
+		for te_image, te_label in zip(self.mnist.test.images, self.mnist.test.labels):
+			self.features.append(list(extract(te_image)))
+			self.labels.append(te_label)
+			print(len(self))
+
 			
 	# normalize the data to make features range from -1024 to 1024
 	def normalize(self):
