@@ -9,23 +9,26 @@ class MNISTFeatureExtractor:
 		self.features = []
 		self.labels = []
 		self.normalize_factor = None
-		self.count = 0
 		self.one_hot = one_hot
 		
 	def __len__(self):
-		return self.count
-		
+		return len(self.labels)
+	
+	# load the original MNIST data and store it in self.mnist
 	def load(self):
 		self.mnist = input_data.read_data_sets(self.directory, one_hot=self.one_hot)
 	
+	# helper method to get a pixel value by row and column
 	@staticmethod
 	def pixel(img, row, col):
 		return img[28 * row + col]
-		
+	
+	# helper method to check if a pixel	 value is greater than 0.5
 	@staticmethod
 	def isOn(img, row, col):
 		return pixel(img, row, col) >= 0.5
 	
+	# extract the statistical features
 	def statistical_feature(self):
 		
 		def offLeft(img, row, col):
@@ -34,6 +37,7 @@ class MNISTFeatureExtractor:
 		def offAbove(img, row, col):
 			return row == 0 or not isOn(img, row - 1, col)
 	
+		# extract 16 features
 		def extract(image):
 			count, countVE, countHE = 0, 0, 0
 			minRow, minCol = None, None
@@ -85,30 +89,35 @@ class MNISTFeatureExtractor:
 			_15 = countHE
 			_16 = sumXHE
 			return _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16
-			
+		
+		# for each image in training set, extract features and push it into self.features
+		# also push the label into self.labels
 		for tr_image, tr_label in zip(self.mnist.train.images, self.mnist.train.labels):
 			self.features.append(list(extract(tr_image)))
 			self.labels.append(tr_label)
-			self.count += 1
 			print(self.count)
+		# for each image in testing set, extract features and push it into self.features
+		# also push the label into self.labels
 		for te_image, te_label in zip(self.mnist.test.images, self.mnist.test.labels):
 			self.features.append(list(extract(te_image)))
 			self.labels.append(te_label)
-			self.count += 1
 			print(self.count)
-		self.features = np.array(self.features)
-		self.labels = np.array(self.labels)
 			
+	# TODO
 	def diagonal_extraction(self):
 		def zone_pixel(img, zone, row, col):
 			pass
 			
+	# normalize the data to make features range from -1024 to 1024
 	def normalize(self):
+		self.features = np.array(self.features)
+		self.labels = np.array(self.labels)
 		abs_max_attr = np.amax(np.abs(self.features), axis=0)
 		self.normalize_factor = 1024 / abs_max_attr
 		for i in range(len(self.features)):
 			self.features[i] *= self.normalize_factor
 			
+	# write features and labels into a file
 	def output(self, filepath):
 		with open(filepath, 'w') as out:
 			for feature, label in zip(self.features, self.labels):
