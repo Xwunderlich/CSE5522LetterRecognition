@@ -3,7 +3,7 @@ import numpy as np
 
 class MNISTFeatureExtractor:
 				
-	def __init__(self, directory='MNIST_data/', one_hot=True):
+	def __init__(self, directory='MNIST_data/'):
 		self.directory = directory
 		self.mnist = None
 		self.features = []
@@ -128,7 +128,7 @@ class MNISTFeatureExtractor:
 				out.write('\n')
 		
 
-extractor = MNISTFeatureExtractor(one_hot=False)
+extractor = MNISTFeatureExtractor()
 extractor.load()
 extractor.statistical_feature()
 extractor.normalize()
