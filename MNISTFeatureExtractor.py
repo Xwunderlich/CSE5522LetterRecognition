@@ -1,6 +1,7 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 import statistics as stat
+import math
 
 class MNISTFeatureExtractor:
 				
@@ -46,7 +47,10 @@ class MNISTFeatureExtractor:
 	# normalize the data to make features range from -1024 to 1024
 	def normalize(self):
 		abs_max_attr = np.amax(np.abs(self.features), axis=0)
-		self.normalize_factor = 256 / abs_max_attr
+		for i in range(len(abs_max_attr)):
+			if abs_max_attr[i] != 0:
+				abs_max_attr[i] = 256 / abs_max_attr[i]
+		self.normalize_factor = abs_max_attr
 		for i in range(len(self.features)):
 			self.features[i] *= self.normalize_factor
 			
@@ -128,21 +132,76 @@ def statistical_features(image):
 
 # diagonal base feature extraction
 def diagonal_features(image):
+	def isOn(img, row, col):
+		return pixel_value(img, row, col) >= 0.5
+		
+	def find_box(img):
+		minRow, minCol = None, None
+		maxRow, maxCol = None, None
+		for i, pixel in enumerate(image):
+			row, col = i // 28, i % 28
+			if isOn(image, row, col):
+				if minRow is None or minRow > row:
+					minRow = row
+				if minCol is None or minCol > col:
+					minCol = col
+				if maxRow is None or maxRow < row:
+					maxRow = row
+				if maxCol is None or maxCol < col:
+					maxCol = col
+		height, width = maxRow - minRow, maxCol - minCol
+		return minRow, minCol, height, width
+	
+	def original_pos(row, col, minRow, minCol):
+		return row + minRow, col + minCol
+	
+	def project_pos(row, col, size, height, width):
+		p_row = int(row * height / size)
+		p_col = int(col * width / size)
+		return p_row, p_col
+		
+	def normalize_image(img):
+		minRow, minCol, height, width = find_box(img)
+		norm_img = [0] * 1600
+		for i in range(1600):
+			row, col = i // 40, i % 40
+			p_row, p_col = project_pos(row, col, 40, height, width)
+			o_row, o_col = original_pos(p_row, p_col, minRow, minCol)
+			norm_img[i] = pixel_value(img, o_row, o_col)
+			if col == 0:
+				print()
+			print('*' if norm_img[i] >= 0.5 else ' ', end='')
+		return norm_img
+		
+	def normalize_image(img):
+		minRow, minCol, height, width = find_box(img)
+		norm_img = [0] * 1600
+		for i in range(1600):
+			row, col = i // 40, i % 40
+			p_row, p_col = project_pos(row, col, 40, height, width)
+			o_row, o_col = original_pos(p_row, p_col, minRow, minCol)
+			norm_img[i] = pixel_value(img, o_row, o_col)
+			if col == 0:
+				print()
+			print('*' if norm_img[i] >= 0.5 else ' ', end='')
+		return norm_img
+		
 	def zone_pixel_on(img, zone, row, col):
-		zone_row = zone // 4 * 7 + row
-		zone_col = zone % 4 * 7 + col
+		zone_row = zone // 7 * 4 + row
+		zone_col = zone % 7 * 4 + col
 		return pixel_value(img, zone_row, zone_col) >= 0.5
 		
 	def evaluate_zone(img, zone):
-		diagonals = [0.0] * 13
-		for row in range(7):
-			for col in range(7):
+		diagonals = [0.0] * 7
+		for row in range(4):
+			for col in range(4):
 				diagonals[row + col] += zone_pixel_on(img, zone, row, col)
 		return stat.mean(diagonals)
 		
-	features = [0] * 16
-	for zone in range(16):
-		features[zone] = evaluate_zone(image, zone)
+	norm_img = image
+	features = [0] * 49
+	for zone in range(49):
+		features[zone] = evaluate_zone(norm_img, zone)
 	return features
 		
 		
