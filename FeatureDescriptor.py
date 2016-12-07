@@ -34,33 +34,34 @@ def statistical_features(image):
 			maxRow = row
 		if maxCol is None or maxCol < col:
 			maxCol = col
-	_1 = minCol
-	_2 = minRow
-	_3 = maxCol - minCol
-	_4 = maxRow - minRow
-	_5 = count
-	_6 = sumX / count
-	_7 = sumY / count
-	_8 = sumX2 / count
-	_9 = sumY2 / count
-	_10 = sumXY / count
-	_11 = sumX2Y / count
-	_12 = sumY2X / count
-	_13 = countVE
-	_14 = sumYVE
-	_15 = countHE
-	_16 = sumXHE
-	return _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16
+	features = [0] * 16
+	features[0] = minCol
+	features[1] = minRow
+	features[2] = maxCol - minCol
+	features[3] = maxRow - minRow
+	features[4] = count
+	features[5] = sumX / count
+	features[6] = sumY / count
+	features[7] = sumX2 / count
+	features[8] = sumY2 / count
+	features[9] = sumXY / count
+	features[10] = sumX2Y / count
+	features[11] = sumY2X / count
+	features[12] = countVE
+	features[13] = sumYVE
+	features[14] = countHE
+	features[15] = sumXHE
+	return features
 
 
 # diagonal base feature extraction
-def diagonal_features(image):
+def diagonal_features(image, **kwargs):
 	
-	zone_size=4
+	zone_size = kwargs['zone_size']
 		
 	def zone_pixel_on(img, zone, row, col):
-		zone_row = zone // (img.width // 4) * 4 + row
-		zone_col = zone % (img.width // 4) * 4 + col
+		zone_row = zone // (img.width // zone_size) * zone_size + row
+		zone_col = zone % (img.width // zone_size) * zone_size + col
 		return img.is_on(zone_row, zone_col)
 		
 	def evaluate_zone(img, zone):
@@ -76,5 +77,6 @@ def diagonal_features(image):
 	for zone in range(num_zones):
 		features[zone] = evaluate_zone(norm_img, zone)
 	return features
+
 	
 		

@@ -14,11 +14,11 @@ dataset.load(one_hot=True)
 dataset.fold(10, 0)
 
 neural_net = NNBuilder(dataset.attr_count, dataset.class_count)		# create a neural net with the number of input and the number of output
-neural_net.add_layer(400, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
-neural_net.add_layer(400, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
-neural_net.add_layer(400, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+neural_net.add_layer(200, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+#neural_net.add_layer(100, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+#neural_net.add_layer(100, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
 neural_net.finish()														# finish building the neural net
-neural_net.train(dataset, rate=0.0000005, iteration=30000, peek_interval=100)
+neural_net.train(dataset, rate=0.00001, iteration=100000, peek_interval=100)
 accuracy, loss = neural_net.evaluate(dataset)
 time = format_time(neural_net.time)
 

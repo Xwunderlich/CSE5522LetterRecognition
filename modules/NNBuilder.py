@@ -61,3 +61,8 @@ class NNBuilder:
 		accuracy = self.session.run(self.accuracy, feed_dict={self.input: test_x, self.labels: test_y})
 		loss = self.session.run(self.loss, feed_dict={self.input: test_x, self.labels: test_y})
 		return accuracy, loss
+		
+class CNNBuilder:
+	def __init__(self):
+		pass
+		

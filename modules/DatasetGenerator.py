@@ -106,13 +106,13 @@ class DatasetGenerator:
 				self.raw_labels.append(label)
 				self.raw_features.append(feature)
 	
-	def extract(self, method=None, normalize_to=None, test=None):
+	def extract(self, method=None, parameters={}, normalize_to=None, test=None):
 		# for each image in training set, extract features and push it into self.features
 		# also push the label into self.labels
 		for count, (image, label) in enumerate(zip(self.raw_features, self.raw_labels)):
 			if count == test:
 				break
-			extraction = image if method is None else list(method(self.Image(image, *self.image_shape)))
+			extraction = image if method is None else list(method(self.Image(image, *self.image_shape), **parameters))
 			self.features.append(extraction)
 			self.labels.append(label)
 			print(count)
