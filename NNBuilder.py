@@ -1,4 +1,5 @@
 import tensorflow as tf
+import time
 
 class NNBuilder:
 	def __init__(self, features, classes):
@@ -12,6 +13,14 @@ class NNBuilder:
 		self.accuracy = None
 		self.train_step = None
 		self.session = None
+		self.start_time = None
+		self.end_time = None
+		
+	@property
+	def time(self):
+		if self.end_time is None:
+			return None
+		return self.end_time - self.start_time
 		
 	def add_layer(self, nodes=None, activation=tf.nn.relu):
 		if nodes is None:
@@ -35,8 +44,9 @@ class NNBuilder:
 		self.session = tf.InteractiveSession()
 		tf.global_variables_initializer().run()
 		self.train_step = tf.train.GradientDescentOptimizer(rate).minimize(self.loss)
+		self.start_time = time.time()
 		for i in range(iteration):
-			batch_x, batch_y = dataset.train.random_batch(batch_size)
+			batch_x, batch_y = dataset.train.next_batch(batch_size)
 			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y})
 			if i % report_interval == 0:
 				accuracy, loss = self.evaluate(dataset)
@@ -44,6 +54,7 @@ class NNBuilder:
 				str_acc = 'accuracy: {:.2f}%'.format(accuracy * 100)
 				str_loss = 'loss: {:.2f}'.format(loss)
 				print('{:<20} {:<20} {}'.format(str_iter, str_acc, str_loss))
+		self.end_time = time.time()
 				
 	def evaluate(self, dataset):
 		test_x, test_y = dataset.test.features, dataset.test.labels
