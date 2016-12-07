@@ -47,7 +47,8 @@ class DatasetLoader:
 			return np.array(features), np.array(labels)
 			
 	digits = list(str(i) for i in range(10))
-	letters = list(chr(u) for u in range(ord('A'), ord('Z')+1))
+	upper_letters = list(chr(u) for u in range(ord('A'), ord('Z')+1))
+	lower_letters = list(chr(l) for l in range(ord('a'), ord('z')+1))
 	
 	def __init__(self, filepath, class_list):
 		self.filepath = filepath
