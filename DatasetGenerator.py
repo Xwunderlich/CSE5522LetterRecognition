@@ -4,24 +4,58 @@ import statistics as stat
 import math
 
 class DatasetGenerator:
+	
+	class Image:
+		def __init__(self, image, height, width, threshold = 0.5):
+			self.image = image
+			self.height = height
+			self.width = width
+			self.threshold = threshold
+			
+		def __iter__(self):
+			for index, pixel in enumerate(self.image):
+				row, col = index // self.width, index % self.width
+				yield pixel, (row, col)
 				
+		def on_pixels(self, threshold=None):
+			threshold = self.threshold if threshold is None else threshold
+			for index, pixel in enumerate(self.image):
+				if pixel < threshold:
+					continue
+				row, col = index // self.width, index % self.width
+				yield pixel, (row, col)
+			
+		def pixel(self, row, col):
+			return self.image[self.width * row + col]
+			
+		def is_on(self, row, col, threshold=None):
+			threshold = self.threshold if threshold is None else threshold
+			return self.pixel(row, col) >= threshold
+			
+		def is_off(self, row, col, threshold=None):
+			threshold = self.threshold if threshold is None else threshold
+			return not self.is_on(row, col, threshold)
+	
 	def __init__(self):
 		self.raw_features = []
 		self.raw_labels = []
 		self.features = []
 		self.labels = []
 		self.normalize_factor = None
+		self.image_shape = None
 		
 	def __len__(self):
 		return len(self.labels)
 	
 	# load the original MNIST data
 	def load_MNIST(self, directory='MNIST_data/'):
+		self.image_shape = (28, 28)
 		mnist = input_data.read_data_sets(directory, one_hot=False)
 		self.raw_features = np.concatenate((mnist.train.images, mnist.test.images))
 		self.raw_labels = np.concatenate((mnist.train.labels, mnist.test.labels))
 		
 	def load_Stanford(self, filepath='Stanford_data/letter_recognition.data'):
+		self.image_shape = (16, 8)
 		with open(filepath, 'r') as source:
 			while True:
 				data = source.readline().rstrip()
@@ -33,13 +67,13 @@ class DatasetGenerator:
 				self.raw_labels.append(label)
 				self.raw_features.append(feature)
 	
-	def extract(self, method=None, normalize=False, test=False):
+	def extract(self, method=None, normalize=False, test=None):
 		# for each image in training set, extract features and push it into self.features
 		# also push the label into self.labels
 		for count, (image, label) in enumerate(zip(self.raw_features, self.raw_labels)):
-			if test and count == 100:
+			if count == test:
 				break
-			extraction = image if method is None else list(method(image))
+			extraction = image if method is None else list(method(self.Image(image, *self.image_shape)))
 			self.features.append(extraction)
 			self.labels.append(label)
 			print(count)
@@ -74,19 +108,13 @@ class DatasetGenerator:
 				out.write('\n')
 		
 
-# helper method to get a pixel value by row and column
-def pixel_value(img, row, col):
-	return img[28 * row + col]
-
 def statistical_features(image):
-	def isOn(img, row, col):
-		return pixel_value(img, row, col) >= 0.5
 
 	def offLeft(img, row, col):
-		return col == 0 or not isOn(img, row, col - 1)
+		return col == 0 or img.is_off(row, col - 1)
 		
 	def offAbove(img, row, col):
-		return row == 0 or not isOn(img, row - 1, col)
+		return row == 0 or img.is_off(row - 1, col)
 		
 	count, countVE, countHE = 0, 0, 0
 	minRow, minCol = None, None
@@ -95,32 +123,31 @@ def statistical_features(image):
 	sumX2, sumY2, sumXY = 0, 0, 0
 	sumX2Y, sumY2X = 0, 0
 	sumXHE, sumYVE = 0, 0
-	for i, pixel in enumerate(image):
-		row, col = i // 28, i % 28
-		x, y = col - 14, row - 14
-		if isOn(image, row, col):
-			count += 1
-			sumX += x
-			sumY += y
-			sumX2 += x**2
-			sumY2 += y**2
-			sumXY += x*y
-			sumX2Y += x**2*y
-			sumY2X += y**2*x
-			if offLeft(image, row, col):
-				countVE += 1
-				sumYVE += y
-			if offAbove(image, row, col):
-				countHE += 1
-				sumXHE += x
-			if minRow is None or minRow > row:
-				minRow = row
-			if minCol is None or minCol > col:
-				minCol = col
-			if maxRow is None or maxRow < row:
-				maxRow = row
-			if maxCol is None or maxCol < col:
-				maxCol = col
+	for pixel, (row, col) in image.on_pixels():
+		x = col - image.width / 2
+		y = row - image.height / 2
+		count += 1
+		sumX += x
+		sumY += y
+		sumX2 += x**2
+		sumY2 += y**2
+		sumXY += x*y
+		sumX2Y += x**2*y
+		sumY2X += y**2*x
+		if offLeft(image, row, col):
+			countVE += 1
+			sumYVE += y
+		if offAbove(image, row, col):
+			countHE += 1
+			sumXHE += x
+		if minRow is None or minRow > row:
+			minRow = row
+		if minCol is None or minCol > col:
+			minCol = col
+		if maxRow is None or maxRow < row:
+			maxRow = row
+		if maxCol is None or maxCol < col:
+			maxCol = col
 	_1 = minCol
 	_2 = minRow
 	_3 = maxCol - minCol
@@ -139,17 +166,15 @@ def statistical_features(image):
 	_16 = sumXHE
 	return _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16
 
+
 # diagonal base feature extraction
 def diagonal_features(image):
-	def isOn(img, row, col):
-		return pixel_value(img, row, col) >= 0.5
-		
+	
 	def find_box(img):
 		minRow, minCol = None, None
 		maxRow, maxCol = None, None
-		for i, pixel in enumerate(image):
-			row, col = i // 28, i % 28
-			if isOn(image, row, col):
+		for pixel, (row, col) in image:
+			if image.is_on(row, col):
 				if minRow is None or minRow > row:
 					minRow = row
 				if minCol is None or minCol > col:
@@ -214,9 +239,9 @@ def diagonal_features(image):
 	return features
 	
 		
-extractor = DatasetGenerator()	
-extractor.load_Stanford()									# load mnist
-extractor.extract(None, normalize=False, test=False)		# pass your feature extractor as the parameter
-extractor.output('Stanford_raw.data', int_feature=True)	# write to file
+extractor = DatasetGenerator()
+extractor.load_Stanford()												# load mnist
+extractor.extract(statistical_features, normalize=True, test=None)		# pass your feature extractor as the parameter
+extractor.output('Stanford_statistical.data', int_feature=True)		# write to file
 			
 			
