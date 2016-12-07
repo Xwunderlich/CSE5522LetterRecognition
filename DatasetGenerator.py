@@ -25,16 +25,19 @@ class DatasetGenerator:
 				row, col = index // self.width, index % self.width
 				yield pixel, (row, col)
 			
-		def pixel(self, row, col):
-			return self.image[self.width * row + col]
+		def pixel(self, row, col, offset=(0,0)):
+			o_row, o_col = row + offset[0], col + offset[1]
+			if o_row < 0 or o_col < 0 or o_row >= self.height or o_col >= self.width:
+				return 0
+			return self.image[self.width * o_row + o_col]
 			
-		def is_on(self, row, col, threshold=None):
+		def is_on(self, row, col, threshold=None, offset=(0,0)):
 			threshold = self.threshold if threshold is None else threshold
-			return self.pixel(row, col) >= threshold
+			return self.pixel(row, col, offset) >= threshold
 			
-		def is_off(self, row, col, threshold=None):
+		def is_off(self, row, col, threshold=None, offset=(0,0)):
 			threshold = self.threshold if threshold is None else threshold
-			return not self.is_on(row, col, threshold)
+			return not self.is_on(row, col, threshold, offset)
 	
 	def __init__(self):
 		self.raw_features = []
@@ -109,13 +112,6 @@ class DatasetGenerator:
 		
 
 def statistical_features(image):
-
-	def offLeft(img, row, col):
-		return col == 0 or img.is_off(row, col - 1)
-		
-	def offAbove(img, row, col):
-		return row == 0 or img.is_off(row - 1, col)
-		
 	count, countVE, countHE = 0, 0, 0
 	minRow, minCol = None, None
 	maxRow, maxCol = None, None
@@ -134,10 +130,10 @@ def statistical_features(image):
 		sumXY += x*y
 		sumX2Y += x**2*y
 		sumY2X += y**2*x
-		if offLeft(image, row, col):
+		if image.is_off(row, col, offset=(0, -1)):
 			countVE += 1
 			sumYVE += y
-		if offAbove(image, row, col):
+		if image.is_off(row, col, offset=(-1, 0)):
 			countHE += 1
 			sumXHE += x
 		if minRow is None or minRow > row:
