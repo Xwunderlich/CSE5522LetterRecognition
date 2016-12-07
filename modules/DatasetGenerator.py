@@ -126,8 +126,8 @@ class DatasetGenerator:
 		if normalize_to is not None:
 			self.normalize(max=normalize_to)
 						
-	# normalize the data to make features range from -1024 to 1024
-	def normalize(self, max=256):
+	# normalize the data to make features range from -1 to 1
+	def normalize(self, max=1):
 		abs_max_attr = np.amax(np.abs(self.features), axis=0)
 		for i in range(len(abs_max_attr)):
 			if abs_max_attr[i] != 0:
