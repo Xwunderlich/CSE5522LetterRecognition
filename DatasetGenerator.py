@@ -38,6 +38,23 @@ class DatasetGenerator:
 		def is_off(self, row, col, threshold=None, offset=(0,0)):
 			threshold = self.threshold if threshold is None else threshold
 			return not self.is_on(row, col, threshold, offset)
+		
+		@property
+		def bounding_box(self):
+			minRow, minCol = None, None
+			maxRow, maxCol = None, None
+			for pixel, (row, col) in image:
+				if image.is_on(row, col):
+					if minRow is None or minRow > row:
+						minRow = row
+					if minCol is None or minCol > col:
+						minCol = col
+					if maxRow is None or maxRow < row:
+						maxRow = row
+					if maxCol is None or maxCol < col:
+						maxCol = col
+			height, width = maxRow - minRow, maxCol - minCol
+			return minRow, minCol, height, width
 	
 	def __init__(self):
 		self.raw_features = []
@@ -166,21 +183,7 @@ def statistical_features(image):
 # diagonal base feature extraction
 def diagonal_features(image):
 	
-	def find_box(img):
-		minRow, minCol = None, None
-		maxRow, maxCol = None, None
-		for pixel, (row, col) in image:
-			if image.is_on(row, col):
-				if minRow is None or minRow > row:
-					minRow = row
-				if minCol is None or minCol > col:
-					minCol = col
-				if maxRow is None or maxRow < row:
-					maxRow = row
-				if maxCol is None or maxCol < col:
-					maxCol = col
-		height, width = maxRow - minRow, maxCol - minCol
-		return minRow, minCol, height, width
+	zone_size=4
 	
 	def original_pos(row, col, minRow, minCol):
 		return row + minRow, col + minCol
@@ -191,20 +194,7 @@ def diagonal_features(image):
 		return p_row, p_col
 		
 	def normalize_image(img):
-		minRow, minCol, height, width = find_box(img)
-		norm_img = [0] * 1600
-		for i in range(1600):
-			row, col = i // 40, i % 40
-			p_row, p_col = project_pos(row, col, 40, height, width)
-			o_row, o_col = original_pos(p_row, p_col, minRow, minCol)
-			norm_img[i] = pixel_value(img, o_row, o_col)
-			if col == 0:
-				print()
-			print('*' if norm_img[i] >= 0.5 else ' ', end='')
-		return norm_img
-		
-	def normalize_image(img):
-		minRow, minCol, height, width = find_box(img)
+		minRow, minCol, height, width = img.bounding_box
 		norm_img = [0] * 1600
 		for i in range(1600):
 			row, col = i // 40, i % 40
@@ -217,27 +207,28 @@ def diagonal_features(image):
 		return norm_img
 		
 	def zone_pixel_on(img, zone, row, col):
-		zone_row = zone // 7 * 4 + row
-		zone_col = zone % 7 * 4 + col
-		return pixel_value(img, zone_row, zone_col) >= 0.5
+		zone_row = zone // (img.width // 4) * 4 + row
+		zone_col = zone % (img.width // 4) * 4 + col
+		return img.is_on(zone_row, zone_col)
 		
 	def evaluate_zone(img, zone):
-		diagonals = [0.0] * 7
-		for row in range(4):
-			for col in range(4):
+		diagonals = [0.0] * (zone_size * 2 - 1)
+		for row in range(zone_size):
+			for col in range(zone_size):
 				diagonals[row + col] += zone_pixel_on(img, zone, row, col)
 		return stat.mean(diagonals)
 		
 	norm_img = image
-	features = [0] * 49
-	for zone in range(49):
+	num_zones = (norm_img.width // zone_size) * (norm_img.height // zone_size)
+	features = [0] * num_zones
+	for zone in range(num_zones):
 		features[zone] = evaluate_zone(norm_img, zone)
 	return features
 	
 		
 extractor = DatasetGenerator()
 extractor.load_Stanford()												# load mnist
-extractor.extract(statistical_features, normalize=True, test=None)		# pass your feature extractor as the parameter
-extractor.output('Stanford_statistical.data', int_feature=True)		# write to file
+extractor.extract(diagonal_features, normalize=True, test=None)		# pass your feature extractor as the parameter
+extractor.output('Stanford_diagonal.data', int_feature=True)		# write to file
 			
 			
