@@ -9,7 +9,7 @@ def format_time(time):
 	second = time % 60
 	return '{}:{:02}:{:05.2f}'.format(hour, minute, second)
 
-dataset = DatasetLoader('MNIST_data/raw.data', class_list=DatasetLoader.digits)
+dataset = DatasetLoader('Stanford_data/raw.data', class_list=DatasetLoader.lower_letters)
 dataset.load(one_hot=True)
 dataset.fold(10, 0)
 
@@ -18,7 +18,7 @@ neural_net.add_layer(400, activation=tf.nn.relu)
 neural_net.add_layer(400, activation=tf.nn.relu)
 neural_net.add_layer(400, activation=tf.nn.relu)
 neural_net.finish()
-neural_net.train(dataset, rate=0.0000005, iteration=30000, report_interval=100)
+neural_net.train(dataset, rate=0.0000005, iteration=30000, peek_interval=100)
 accuracy, loss = neural_net.evaluate(dataset)
 time = format_time(neural_net.time)
 

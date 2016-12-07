@@ -40,7 +40,7 @@ class NNBuilder:
 		prediction = tf.equal(tf.argmax(self.output, 1), tf.argmax(self.labels, 1))
 		self.accuracy = tf.reduce_mean(tf.cast(prediction, tf.float32))
 		
-	def train(self, dataset, rate=0.1, iteration=10000, batch_size=100, report_interval=1):
+	def train(self, dataset, rate=0.1, iteration=10000, batch_size=100, peek_interval=1):
 		self.session = tf.InteractiveSession()
 		tf.global_variables_initializer().run()
 		self.train_step = tf.train.GradientDescentOptimizer(rate).minimize(self.loss)
@@ -48,7 +48,7 @@ class NNBuilder:
 		for i in range(iteration):
 			batch_x, batch_y = dataset.train.next_batch(batch_size)
 			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y})
-			if i % report_interval == 0:
+			if i % peek_interval == 0:
 				accuracy, loss = self.evaluate(dataset)
 				str_iter = 'iteration: {}'.format(i)
 				str_acc = 'accuracy: {:.2f}%'.format(accuracy * 100)
