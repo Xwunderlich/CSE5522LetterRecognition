@@ -95,16 +95,23 @@ class DatasetGenerator:
 		
 	def load_Stanford(self, filepath='Stanford_source/letter_recognition.data'):
 		self.image_shape = (16, 8)
+		labels = [None] * 10
+		features = [None] * 10
+		for i in range(10):
+			labels[i], features[i] = [], []
 		with open(filepath, 'r') as source:
 			while True:
 				data = source.readline().rstrip()
 				if data == str():
 					break
 				value = data.split('\t')
-				label = value[1]
+				data_id, label, next_id, word_id, position, fold = value[0:6]
 				feature = list(float(s) for s in value[6:])
-				self.raw_labels.append(label)
-				self.raw_features.append(feature)
+				labels[int(fold)].append(label)
+				features[int(fold)].append(feature)
+		self.raw_labels = np.concatenate(labels)
+		self.raw_features = np.concatenate(features)
+		print(len(self.raw_labels), len(self.raw_features))
 	
 	def extract(self, method=None, parameters={}, normalize_to=None, test=None):
 		# for each image in training set, extract features and push it into self.features
@@ -115,7 +122,7 @@ class DatasetGenerator:
 			extraction = image if method is None else list(method(self.Image(image, *self.image_shape), **parameters))
 			self.features.append(extraction)
 			self.labels.append(label)
-			print(count)
+			print('count:', count)
 			
 		# convert to numpy array
 		self.features = np.array(self.features)

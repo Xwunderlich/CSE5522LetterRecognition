@@ -36,4 +36,4 @@ def generate_MNIST_raw(path='MNIST_data/raw.data', test=None):
 	generator.extract(None, normalize_to=256, test=test)	
 	generator.output(path, int_feature=True)
 	
-generate_stanford_diagonal()
+generate_stanford_raw()

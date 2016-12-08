@@ -49,18 +49,26 @@ class NNBuilder:
 			batch_x, batch_y = dataset.train.next_batch(batch_size)
 			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y})
 			if i % peek_interval == 0:
-				accuracy, loss = self.evaluate(dataset)
+				test_accuracy, test_loss, train_accuracy, train_loss = self.evaluate(dataset, (batch_x, batch_y))
 				str_iter = 'iteration: {}'.format(i)
-				str_acc = 'accuracy: {:.2f}%'.format(accuracy * 100)
-				str_loss = 'loss: {:.2f}'.format(loss)
-				print('{:<20} {:<20} {}'.format(str_iter, str_acc, str_loss))
+				str_tr_acc = 'train accuracy: {:.2f}%'.format(train_accuracy * 100)
+				str_tr_loss = 'train loss: {:.2f}'.format(train_loss)
+				str_te_acc = 'test accuracy:  {:.2f}%'.format(test_accuracy * 100)
+				str_te_loss = 'test loss:  {:.2f}'.format(test_loss)
+				print('{}\n{:<25} {}\n{:<25} {}\n'.format(str_iter, str_tr_acc, str_tr_loss, str_te_acc, str_te_loss))
 		self.end_time = time.time()
 				
-	def evaluate(self, dataset):
+	def evaluate(self, dataset, training_batch=None):
+		def eval(x, y):
+			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y})
+			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y})
+			return accuracy, loss
 		test_x, test_y = dataset.test.features, dataset.test.labels
-		accuracy = self.session.run(self.accuracy, feed_dict={self.input: test_x, self.labels: test_y})
-		loss = self.session.run(self.loss, feed_dict={self.input: test_x, self.labels: test_y})
-		return accuracy, loss
+		test_accuracy, test_loss = eval(test_x, test_y)
+		if training_batch is not None:
+			train_accuracy, train_loss = eval(*training_batch)
+			return test_accuracy, test_loss, train_accuracy, train_loss
+		return test_accuracy, test_loss
 		
 class CNNBuilder:
 	def __init__(self):
