@@ -36,12 +36,11 @@ def generate_MNIST_statistical(path='MNIST_data/statistical.data', test=None):
   generator.extract(fd.statistical_features, normalize_to=256, test=test) 
   generator.output(path, int_feature=False)
   
-def generate_MNIST_hotspot(path='MNIST_data/hotspot.data'):
+def generate_MNIST_hotspot(path='MNIST_data/hotspot.data', test=None):
   extractor = DatasetGenerator()
   extractor.load_MNIST()
-  extractor.extract(fd.hotspot_features, normalize_to=None, test=None)  
+  extractor.extract(fd.hotspot_features, normalize_to=None, test=test)  
   extractor.output(path, int_feature=True)
- 
 
 def generate_MNIST_raw(path='MNIST_data/raw.data', test=None):
   generator = DatasetGenerator()
