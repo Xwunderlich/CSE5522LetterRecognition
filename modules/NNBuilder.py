@@ -59,6 +59,7 @@ class NNBuilder:
 		self.start_time = None
 		self.end_time = None
 		self.keep_probs = {}
+		self.test_probs = {}
 		
 	@property
 	def time(self):
@@ -71,6 +72,7 @@ class NNBuilder:
 			return layer
 		keep_prob = tf.placeholder(tf.float32)
 		self.keep_probs[keep_prob] = prob
+		self.test_probs[keep_prob] = 1.0
 		return tf.nn.dropout(layer, keep_prob)
 	
 	def add_layer(self, nodes=None, activation=tf.nn.relu, dropout=None):
@@ -120,8 +122,8 @@ class NNBuilder:
 				
 	def evaluate(self, dataset=None, batch=None):
 		def eval(x, y):
-			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
-			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
+			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y, **self.test_probs})
+			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y, **self.test_probs})
 			return accuracy, loss
 		if dataset is not None:
 			test_x, test_y = dataset.test.features, dataset.test.labels
