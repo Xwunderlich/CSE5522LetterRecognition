@@ -28,7 +28,22 @@ def test_MNIST_raw_CNN():
 	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
 
 def test_MNIST_statistical():
-	dataset = DatasetLoader('MNIST_data/statistical.data', class_list=DatasetLoader.digits)
+	dataset = DatasetLoader('MNIST_data/statistical', class_list=DatasetLoader.digits)
+	dataset.load(one_hot=True)
+	dataset.fold(10, test_fold=9)
+
+	neural_net = NNBuilder(dataset.attr_count, dataset.class_count)		# create a neural net with the number of input and the number of output
+	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
+	neural_net.finish(dropout=0.5)											# create the output layer with a dropout
+	neural_net.train(dataset, algorithm=tf.train.AdamOptimizer, rate=1e-4, iteration=200000, batch_size=100, peek_interval=100)
+	accuracy, loss = neural_net.evaluate(dataset)
+	time = format_time(neural_net.time)
+	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
+	
+def test_MNIST_diagonal():
+	dataset = DatasetLoader('MNIST_data/diagonal', class_list=DatasetLoader.digits)
 	dataset.load(one_hot=True)
 	dataset.fold(10, test_fold=9)
 
@@ -43,7 +58,7 @@ def test_MNIST_statistical():
 	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
 
 def test_stanford_raw_CNN():
-	dataset = DatasetLoader('Stanford_data/raw.data', class_list=DatasetLoader.lower_letters)
+	dataset = DatasetLoader('Stanford_data/raw', class_list=DatasetLoader.lower_letters)
 	dataset.load(one_hot=True)
 	dataset.fold(10, test_fold=9)
 
@@ -60,4 +75,4 @@ def test_stanford_raw_CNN():
 
 	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
 	
-test_MNIST_raw_CNN()
+test_MNIST_diagonal()
