@@ -9,6 +9,19 @@ def format_time(time):
 	second = time % 60
 	return '{}:{:02}:{:05.2f}'.format(hour, minute, second)
 
+def test_MNIST_raw_softmax():
+	dataset = DatasetLoader('MNIST_data/raw', class_list=DatasetLoader.digits)
+	dataset.load(one_hot=True)
+	dataset.fold(10, test_fold=0)
+
+	neural_net = NNBuilder(dataset.attr_count, dataset.class_count)
+	neural_net.finish()												
+	neural_net.train(dataset, algorithm=tf.train.GradientDescentOptimizer, rate=2e-3, iteration=200000, batch_size=200, peek_interval=1000)
+	accuracy, loss = neural_net.evaluate(dataset)
+	time = format_time(neural_net.time)
+
+	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
+
 def test_MNIST_raw_CNN():
 	dataset = DatasetLoader('MNIST_data/raw', class_list=DatasetLoader.digits)
 	dataset.load(one_hot=True)
@@ -64,7 +77,7 @@ def test_stanford_raw_softmax():
 
 	neural_net = NNBuilder(dataset.attr_count, dataset.class_count)
 	neural_net.finish()												
-	neural_net.train(dataset, algorithm=tf.train.AdamOptimizer, rate=1e-3, iteration=30000, batch_size=1000, peek_interval=100)
+	neural_net.train(dataset, algorithm=tf.train.GradientDescentOptimizer, rate=1e-3, iteration=200000, batch_size=500, peek_interval=100)
 	accuracy, loss = neural_net.evaluate(dataset)
 	time = format_time(neural_net.time)
 

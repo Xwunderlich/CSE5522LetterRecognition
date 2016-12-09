@@ -158,7 +158,7 @@ class DatasetGenerator:
 			return path
 		
 		def get_filename(path, chunk):
-			chunk_file = 'chunk' + str(chunk) + '.' + self.extension
+			chunk_file = 'chunk' + '{:02}'.format(chunk) + '.' + self.extension
 			return os.path.join(path, chunk_file)
 		
 		chunk_size = len(self) // chunks
@@ -175,7 +175,7 @@ class DatasetGenerator:
 					out.write(str(label))
 					for attr in feature:
 						out.write(', ')
-						out.write(str(int(attr)) if int else '{:.2f}'.format(attr))
+						out.write(str(int(attr)) if int_feature else '{:.2f}'.format(attr))
 					out.write('\n')
 				pointer += chunk_size
 			
