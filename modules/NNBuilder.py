@@ -92,7 +92,7 @@ class NNBuilder:
 		self.loss = Func.cross_entropy(self.output, self.labels)
 		self.accuracy = Func.accuracy(self.output, self.labels)
 		
-	def train(self, dataset, algorithm=tf.train.GradientDescentOptimizer, rate=0.1, iteration=10000, batch_size=100, peek_interval=1):
+	def train(self, dataset, algorithm=tf.train.GradientDescentOptimizer, rate=0.1, iteration=10000, batch_size=100, peek_interval=10, show_test=True):
 		self.session = tf.InteractiveSession()
 		self.train_step = algorithm(rate).minimize(self.loss)
 		self.start_time = time.time()
@@ -101,29 +101,36 @@ class NNBuilder:
 			batch_x, batch_y = dataset.train.next_batch(batch_size)
 			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y, **self.keep_probs})
 			if i % peek_interval == 0:
-				self.peek(i, dataset, (batch_x, batch_y))
+				self.peek(i, dataset if show_test else None, (batch_x, batch_y))
 		self.end_time = time.time()
 				
 	def peek(self, iteration, dataset, training_batch):
-		test_accuracy, test_loss, train_accuracy, train_loss = self.evaluate(dataset, training_batch)
 		str_iter = 'step: {}'.format(iteration)
-		str_tr_acc = 'train accuracy: {:.2f}%'.format(train_accuracy * 100)
-		str_tr_loss = 'train loss: {:.2f}'.format(train_loss)
-		str_te_acc = 'test accuracy:  {:.2f}%'.format(test_accuracy * 100)
-		str_te_loss = 'test loss:  {:.2f}'.format(test_loss)
-		print('\n{}\n{:<25} {}\n{:<25} {}'.format(str_iter, str_tr_acc, str_tr_loss, str_te_acc, str_te_loss))
+		print('\n{}'.format(str_iter))
+		if training_batch is not None:
+			train_accuracy, train_loss = self.evaluate(batch=training_batch)
+			str_tr_acc = 'train accuracy: {:.2f}%'.format(train_accuracy * 100)
+			str_tr_loss = 'train loss: {:.2f}'.format(train_loss)
+			print('{:<25} {}'.format(str_tr_acc, str_tr_loss))
+		if dataset is not None:
+			test_accuracy, test_loss = self.evaluate(dataset=dataset)
+			str_te_acc = 'test accuracy:  {:.2f}%'.format(test_accuracy * 100)
+			str_te_loss = 'test loss:  {:.2f}'.format(test_loss)
+			print('{:<25} {}'.format(str_te_acc, str_te_loss))
 				
-	def evaluate(self, dataset, training_batch=None):
+	def evaluate(self, dataset=None, batch=None):
 		def eval(x, y):
 			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
 			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
 			return accuracy, loss
-		test_x, test_y = dataset.test.features, dataset.test.labels
-		test_accuracy, test_loss = eval(test_x, test_y)
-		if training_batch is not None:
-			train_accuracy, train_loss = eval(*training_batch)
-			return test_accuracy, test_loss, train_accuracy, train_loss
-		return test_accuracy, test_loss
+		if dataset is not None:
+			test_x, test_y = dataset.test.features, dataset.test.labels
+			test_accuracy, test_loss = eval(test_x, test_y)
+			return test_accuracy, test_loss
+		if batch is not None:
+			batch_accuracy, batch_loss = eval(*batch)
+			return batch_accuracy, batch_loss
+		return None, None
 		
 		
 class CNNBuilder(NNBuilder):

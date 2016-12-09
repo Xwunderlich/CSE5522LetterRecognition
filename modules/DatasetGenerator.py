@@ -1,6 +1,7 @@
 from tensorflow.examples.tutorials.mnist import input_data
 import numpy as np
 import math
+import os
 import FeatureDescriptor as fd
 
 class DatasetGenerator:
@@ -75,13 +76,14 @@ class DatasetGenerator:
 				print('*' if norm_img[i] >= 0.5 else ' ', end='')
 			return norm_img
 	
-	def __init__(self):
+	def __init__(self, extension='data'):
 		self.raw_features = []
 		self.raw_labels = []
 		self.features = []
 		self.labels = []
 		self.normalize_factor = None
 		self.image_shape = None
+		self.extension = extension
 		
 	def __len__(self):
 		return len(self.labels)
@@ -144,15 +146,37 @@ class DatasetGenerator:
 			self.features[i] *= self.normalize_factor
 			
 	# write features and labels into a file
-	def output(self, filepath, int_feature=False, chunks=None):
-		if chunks is not None:
-			chunk_size = len(self) // chunks
-		with open(filepath, 'w') as out:
-			for feature, label in zip(self.features, self.labels):
-				out.write(str(label))
-				for attr in feature:
-					out.write(', ')
-					out.write(str(int(attr)) if int else '{:.2f}'.format(attr))
-				out.write('\n')
+	def output(self, directory, name, int_feature=False, chunks=1):
+		def make_path(directory, name):
+			path = os.path.join(directory, name)
+			if os.path.exists(path):
+				print('Cleaning old data...')
+				for file in os.listdir(path):
+					os.remove(os.path.join(path, file))
+			else:
+				os.makedirs(path)
+			return path
+		
+		def get_filename(path, chunk):
+			chunk_file = 'chunk' + str(chunk) + '.' + self.extension
+			return os.path.join(path, chunk_file)
+		
+		chunk_size = len(self) // chunks
+		pointer = 0
+		path = make_path(directory, name)
+		for c in range(chunks):
+			filepath = get_filename(path, c)
+			print('Exporting chunk ({}/{})...'.format(c, chunks - 1))
+			with open(filepath, 'w') as out:
+				for index in range(chunk_size):
+					if pointer + index == len(self):
+						break
+					feature, label = self.features[pointer + index], self.labels[pointer + index]
+					out.write(str(label))
+					for attr in feature:
+						out.write(', ')
+						out.write(str(int(attr)) if int else '{:.2f}'.format(attr))
+					out.write('\n')
+				pointer += chunk_size
 			
 			

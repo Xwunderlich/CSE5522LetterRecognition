@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import os
 
 class DatasetLoader:
 	class DataPointer:
@@ -50,8 +51,8 @@ class DatasetLoader:
 	upper_letters = list(chr(u) for u in range(ord('A'), ord('Z')+1))
 	lower_letters = list(chr(l) for l in range(ord('a'), ord('z')+1))
 	
-	def __init__(self, filepath, class_list):
-		self.filepath = filepath
+	def __init__(self, directory, class_list):
+		self.directory = directory
 		self.class_list = class_list
 		self.labels = None
 		self.features = None
@@ -73,22 +74,27 @@ class DatasetLoader:
 		print('Loading Dataset...')
 		labels = list()
 		features = list()
-		with open(self.filepath) as file:
-			while True:
-				data = file.readline().rstrip()
-				if data == str():
-					break
-				value = data.split(',')
-				label = self.class_list.index(value[0])
-				if one_hot:
-					one_hot_label = [0.0] * len(self.class_list)
-					one_hot_label[label] = 1.0
-					label = one_hot_label
-				feature = list(float(s) for s in value[1:])
-				labels.append(label)
-				features.append(feature)
+		file_list = os.listdir(self.directory)
+		file_list.sort()
+		for filename in file_list:
+			path = os.path.join(self.directory, filename)
+			with open(path) as file:
+				while True:
+					data = file.readline().rstrip()
+					if data == str():
+						break
+					value = data.split(',')
+					label = self.class_list.index(value[0])
+					if one_hot:
+						one_hot_label = [0.0] * len(self.class_list)
+						one_hot_label[label] = 1.0
+						label = one_hot_label
+					feature = list(float(s) for s in value[1:])
+					labels.append(label)
+					features.append(feature)
 		self.labels = np.array(labels)
 		self.features = np.array(features)
+		print('Dataset size:', len(self))
 		print('Done Loading...')
 		
 	def fold(self, k, test_fold=0):
