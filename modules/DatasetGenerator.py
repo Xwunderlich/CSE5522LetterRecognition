@@ -87,13 +87,13 @@ class DatasetGenerator:
 		return len(self.labels)
 	
 	# load the original MNIST data
-	def load_MNIST(self, directory='MNIST_source/'):
+	def load_MNIST(self, directory='data_source/MNIST/'):
 		self.image_shape = (28, 28)
 		mnist = input_data.read_data_sets(directory, one_hot=False)
 		self.raw_features = np.concatenate((mnist.train.images, mnist.test.images))
 		self.raw_labels = np.concatenate((mnist.train.labels, mnist.test.labels))
 		
-	def load_Stanford(self, filepath='Stanford_source/letter_recognition.data'):
+	def load_Stanford(self, filepath='data_source/Stanford/letter_recognition.data'):
 		self.image_shape = (16, 8)
 		labels = [None] * 10
 		features = [None] * 10
@@ -144,7 +144,9 @@ class DatasetGenerator:
 			self.features[i] *= self.normalize_factor
 			
 	# write features and labels into a file
-	def output(self, filepath, int_feature=False):
+	def output(self, filepath, int_feature=False, chunks=None):
+		if chunks is not None:
+			chunk_size = len(self) // chunks
 		with open(filepath, 'w') as out:
 			for feature, label in zip(self.features, self.labels):
 				out.write(str(label))

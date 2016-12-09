@@ -18,7 +18,7 @@ def test_MNIST_statistical():
 	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
 	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
 	neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
-	neural_net.finish(dropout=0.5)														# finish building the neural net
+	neural_net.finish(dropout=0.5)											# create the output layer with a dropout
 	neural_net.train(dataset, algorithm=tf.train.AdamOptimizer, rate=1e-4, iteration=200000, batch_size=100, peek_interval=100)
 	accuracy, loss = neural_net.evaluate(dataset)
 	time = format_time(neural_net.time)
