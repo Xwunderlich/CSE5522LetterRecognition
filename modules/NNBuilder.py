@@ -33,7 +33,7 @@ class Func:
 		
 	@staticmethod
 	def flatten(image, height, width, depth):
-		return tf.reshape(value, [-1, height * width * depth])
+		return tf.reshape(image, [-1, height * width * depth])
 		
 	@staticmethod
 	def conv2d(image, weight, bias):
@@ -132,7 +132,7 @@ class CNNBuilder(NNBuilder):
 		self.width = width
 		self.height = height
 		
-	def add_linker(type):
+	def add_linker(self, type):
 		last_type = len(self.layers[-1])
 		if type == 'convolve' and last_type == 2:
 			image = Func.image(self.input, self.height, self.width)
@@ -155,8 +155,8 @@ class CNNBuilder(NNBuilder):
 	def add_pool_layer(self, height=2, width=2):
 		l, h, w, d = self.layers[-1]
 		layer = Func.pool(l, height, width)
-		new_height = h / height
-		new_width = w / width
+		new_height = h // height
+		new_width = w // width
 		self.layers.append((layer, new_height, new_width, d))
 		
 	def add_layer(self, nodes=None, activation=tf.nn.relu, dropout=None):

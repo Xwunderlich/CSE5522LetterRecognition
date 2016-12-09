@@ -78,8 +78,6 @@ def diagonal_features(image, **kwargs):
     features[zone] = evaluate_zone(norm_img, zone)
   return features
 
-  
-    
     
 # hotspot feature extraction
 def hotspot_features(image):
