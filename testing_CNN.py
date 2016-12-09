@@ -13,7 +13,7 @@ dataset = DatasetLoader('MNIST_data/statistical.data', class_list=DatasetLoader.
 dataset.load(one_hot=True)
 dataset.fold(10, test_fold=9)
 
-neural_net = NNBuilder(dataset.attr_count, dataset.class_count)		# create a neural net with the number of input and the number of output
+neural_net = CNNBuilder(dataset.attr_count, dataset.class_count)		# create a neural net with the number of input and the number of output
 neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
 neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes
 neural_net.add_layer(500, activation=tf.nn.relu)						# add a ReLU layer with certain amount of nodes

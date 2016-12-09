@@ -12,7 +12,7 @@ class Var:
 		init = tf.constant(0.1, shape=shape)
 		return tf.Variable(init)
 		
-class Value:
+class Func:
 	@staticmethod
 	def sum(value, weight, bias):
 		return tf.matmul(value, weight) + bias
@@ -28,16 +28,23 @@ class Value:
 		return tf.reduce_mean(tf.cast(match, tf.float32))
 		
 	@staticmethod
-	def conv2d(image, weight):
-		return tf.nn.conv2d(image, weight, strides=[1, 1, 1, 1], padding='SAME')
+	def image(value, height, width):
+		return tf.reshape(value, [-1, height, width, 1])
+		
+	@staticmethod
+	def flatten(image, height, width, depth):
+		return tf.reshape(value, [-1, height * width * depth])
+		
+	@staticmethod
+	def conv2d(image, weight, bias):
+		return tf.nn.conv2d(image, weight, strides=[1, 1, 1, 1], padding='SAME') + bias
 
 	@staticmethod
-	def pool2x2(image):
-		return tf.nn.max_pool(image, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+	def pool(image, height, width):
+		return tf.nn.max_pool(image, ksize=[1, height, width, 1], strides=[1, height, width, 1], padding='SAME')
+	
 	
 class NNBuilder:
-	
-	
 	def __init__(self, features, classes):
 		self.features = features
 		self.classes = classes
@@ -51,6 +58,7 @@ class NNBuilder:
 		self.session = None
 		self.start_time = None
 		self.end_time = None
+		self.keep_probs = {}
 		
 	@property
 	def time(self):
@@ -58,31 +66,40 @@ class NNBuilder:
 			return None
 		return self.end_time - self.start_time
 	
-	def add_layer(self, nodes=None, activation=tf.nn.relu):
-		if nodes is None:
-			nodes = self.layers[-1][1]
+	def add_dropout(self, layer, prob):
+		if prob is None:
+			return layer
+		keep_prob = tf.placeholder(tf.float32)
+		self.keep_probs[keep_prob] = prob
+		return tf.nn.dropout(layer, keep_prob)
+	
+	def add_layer(self, nodes=None, activation=tf.nn.relu, dropout=None):
 		l, d = self.layers[-1]
+		if nodes is None:
+			nodes = d
+		l = self.add_dropout(l, dropout)
 		W = Var.weights(d, nodes)
 		b = Var.bias(nodes)
-		layer = activation(Value.sum(l, W, b))
+		layer = activation(Func.sum(l, W, b))
 		self.layers.append((layer, nodes))
 		
-	def finish(self):
+	def finish(self, dropout=None):
 		l, d = self.layers[-1]
+		l = self.add_dropout(l, dropout)
 		W = Var.weights(d, self.classes)
 		b = Var.bias=(self.classes)
-		self.output = Value.sum(l, W, b)
-		self.loss = Value.cross_entropy(self.output, self.labels)
-		self.accuracy = Value.accuracy(self.output, self.labels)
+		self.output = Func.sum(l, W, b)
+		self.loss = Func.cross_entropy(self.output, self.labels)
+		self.accuracy = Func.accuracy(self.output, self.labels)
 		
 	def train(self, dataset, algorithm=tf.train.GradientDescentOptimizer, rate=0.1, iteration=10000, batch_size=100, peek_interval=1):
 		self.session = tf.InteractiveSession()
-		tf.global_variables_initializer().run()
 		self.train_step = algorithm(rate).minimize(self.loss)
 		self.start_time = time.time()
+		tf.global_variables_initializer().run()
 		for i in range(iteration):
 			batch_x, batch_y = dataset.train.next_batch(batch_size)
-			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y})
+			self.session.run(self.train_step, feed_dict={self.input: batch_x, self.labels: batch_y, **self.keep_probs})
 			if i % peek_interval == 0:
 				self.peek(i, dataset, (batch_x, batch_y))
 		self.end_time = time.time()
@@ -98,8 +115,8 @@ class NNBuilder:
 				
 	def evaluate(self, dataset, training_batch=None):
 		def eval(x, y):
-			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y})
-			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y})
+			accuracy = self.session.run(self.accuracy, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
+			loss = self.session.run(self.loss, feed_dict={self.input: x, self.labels: y, **self.keep_probs})
 			return accuracy, loss
 		test_x, test_y = dataset.test.features, dataset.test.labels
 		test_accuracy, test_loss = eval(test_x, test_y)
@@ -108,7 +125,44 @@ class NNBuilder:
 			return test_accuracy, test_loss, train_accuracy, train_loss
 		return test_accuracy, test_loss
 		
-class CNNBuilder:
-	def __init__(self):
-		pass
 		
+class CNNBuilder(NNBuilder):
+	def __init__(self, height, width, classes):
+		super().__init__(width * height, classes)
+		self.width = width
+		self.height = height
+		
+	def add_linker(type):
+		last_type = len(self.layers[-1])
+		if type == 'convolve' and last_type == 2:
+			image = Func.image(self.input, self.height, self.width)
+			self.layers.append((image, self.height, self.width, 1))
+		if type == 'flat' and last_type == 4:
+			img, h, w, d = self.layers[-1]
+			layer = Func.flatten(img, h, w, d)
+			self.layers.append((layer, h * w * d))
+		
+	def add_conv_layer(self, depth=None, filter_size=(5, 5), activation=tf.nn.relu):
+		self.add_linker('convolve')
+		l, h, w, d = self.layers[-1]
+		if depth is None:
+			depth = d
+		W = Var.weights(*filter_size, d, depth)
+		b = Var.bias(depth)
+		layer = activation(Func.conv2d(l, W, b))
+		self.layers.append((layer, h, w, depth))
+		
+	def add_pool_layer(self, height=2, width=2):
+		l, h, w, d = self.layers[-1]
+		layer = Func.pool(l, height, width)
+		new_height = h / height
+		new_width = w / width
+		self.layers.append((layer, new_height, new_width, d))
+		
+	def add_layer(self, nodes=None, activation=tf.nn.relu, dropout=None):
+		self.add_linker('flat')
+		super().add_layer(nodes, activation, dropout)
+		
+	def finish(self, dropout=None):
+		self.add_linker('flat')
+		super().finish(dropout)		

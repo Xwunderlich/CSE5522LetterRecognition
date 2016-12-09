@@ -91,7 +91,7 @@ class DatasetLoader:
 		self.features = np.array(features)
 		print('Done Loading...')
 		
-	def fold(self, k, test_fold):
+	def fold(self, k, test_fold=0):
 		test_start, test_end = int(len(self) * test_fold / k), int(len(self) * (test_fold + 1) / k)
 		test_indices = list(range(test_start, test_end))
 		train_indices = list(range(test_start)) + list(range(test_end, len(self)))
