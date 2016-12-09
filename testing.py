@@ -57,6 +57,19 @@ def test_MNIST_diagonal():
 	time = format_time(neural_net.time)
 	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
 
+def test_stanford_raw_softmax():
+	dataset = DatasetLoader('Stanford_data/raw', class_list=DatasetLoader.lower_letters)
+	dataset.load(one_hot=True)
+	dataset.fold(10, test_fold=9)
+
+	neural_net = NNBuilder(dataset.attr_count, dataset.class_count)
+	neural_net.finish()												
+	neural_net.train(dataset, algorithm=tf.train.AdamOptimizer, rate=1e-3, iteration=30000, batch_size=1000, peek_interval=100)
+	accuracy, loss = neural_net.evaluate(dataset)
+	time = format_time(neural_net.time)
+
+	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
+
 def test_stanford_raw_CNN():
 	dataset = DatasetLoader('Stanford_data/raw', class_list=DatasetLoader.lower_letters)
 	dataset.load(one_hot=True)
@@ -75,4 +88,4 @@ def test_stanford_raw_CNN():
 
 	print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))
 	
-test_MNIST_diagonal()
+test_stanford_raw_softmax()
