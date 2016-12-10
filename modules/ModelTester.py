@@ -39,6 +39,6 @@ class ModelTester:
 		self.model.train(self.dataset, algorithm=algorithm, rate=rate, iteration=iteration, batch_size=batch_size, peek_interval=peek_interval, show_test=show_test)
 		
 	def evaluate_model(self):
-		accuracy, loss = self.model.evaluate(self.dataset)
+		accuracy, loss = self.model.evaluate(dataset=self.dataset)
 		time = self.format_time(self.model.time)
 		print('RESULT: {:.2f}%   TIME: {}'.format(accuracy * 100, time))

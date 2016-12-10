@@ -20,7 +20,7 @@ def generate_stanford_hotspot(directory='Stanford_data/', name='hotspot', test=N
   
 def generate_stanford_centroid(directory='Stanford_data/', name='centroid', test=None):
   extractor = DatasetGenerator()
-  extractor.load_MNIST()
+  extractor.load_Stanford()
   extractor.extract(fd.centroid_features, normalize_to=256, test=test)  
   extractor.output(directory, name, int_feature=True)
   
@@ -60,4 +60,4 @@ def generate_MNIST_raw(directory='MNIST_data/', name='raw', test=None):
   generator.extract(None, test=test)  
   generator.output(directory, name, int_feature=False, chunks=20)
   
-generate_MNIST_raw()
+generate_stanford_centroid()
