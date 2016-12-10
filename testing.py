@@ -57,8 +57,8 @@ def test_MNIST_centroid():
 def test_MNIST_hotspot():
 	tester = ModelTester()
 	tester.prepare_data('MNIST_data/hotspot', class_list=DatasetLoader.digits, fold=10, test_fold=0)
-	tester.build_NN_model([500, 500, 500], activation=tf.nn.relu, dropout=0.5)											
-	tester.train_model(algorithm=tf.train.AdamOptimizer, rate=5e-5, iteration=200000, batch_size=100, peek_interval=100)
+	tester.build_NN_model([500, 500, 500], activation=tf.nn.relu, dropout=None)											
+	tester.train_model(algorithm=tf.train.AdamOptimizer, rate=2e-5, iteration=200000, batch_size=100, peek_interval=100)
 	tester.evaluate_model()
 
 def test_Irvine_statistical():
@@ -120,8 +120,8 @@ def test_Stanford_centroid():
 def test_Stanford_hotspot():
 	tester = ModelTester()
 	tester.prepare_data('Stanford_data/hotspot', class_list=DatasetLoader.lower_letters, fold=10, test_fold=0)
-	tester.build_NN_model([500, 500, 500], activation=tf.nn.relu, dropout=0.5)											
+	tester.build_NN_model([500, 500, 500], activation=tf.nn.relu, dropout=None)											
 	tester.train_model(algorithm=tf.train.AdamOptimizer, rate=1e-4, iteration=80000, batch_size=100, peek_interval=100)
 	tester.evaluate_model()
 	
-test_MNIST_hotspot()
+test_Stanford_hotspot()
